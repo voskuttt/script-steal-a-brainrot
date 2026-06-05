@@ -1,0 +1,291 @@
+if not game:IsLoaded() then game.Loaded:Wait() end
+task.spawn(function()
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+
+local lp = Players.LocalPlayer
+if not lp.Character then lp.CharacterAdded:Wait() end
+local M = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+local GUID = "f888ee6e-c86d-46e1-93d7-0639d6635d42"
+local CFGFILE = "balloonresetcfg.json"
+
+local defCfg = { autoOn = true, resetKey = "B" }
+local cfg = {}
+local function loadCfg()
+    if isfile and isfile(CFGFILE) then
+        local ok, data = pcall(function() return HttpService:JSONDecode(readfile(CFGFILE)) end)
+        if ok and type(data) == "table" then
+            for k, v in pairs(defCfg) do cfg[k] = (data[k] ~= nil) and data[k] or v end
+            return
+        end
+    end
+    for k, v in pairs(defCfg) do cfg[k] = v end
+end
+loadCfg()
+local saveQueued = false
+local function qSave()
+    if saveQueued then return end
+    saveQueued = true
+    task.delay(1, function()
+        saveQueued = false
+        if writefile then pcall(function() writefile(CFGFILE, HttpService:JSONEncode(cfg)) end) end
+    end)
+end
+
+local ACCENT = Color3.fromRGB(88,101,242)
+local BG2 = Color3.fromRGB(22,22,30)
+local BG3 = Color3.fromRGB(25,25,35)
+local ROW = Color3.fromRGB(25,30,42)
+
+local grads = {}
+RunService.Heartbeat:Connect(function()
+    local ang = (tick()*120)%360
+    for i = #grads, 1, -1 do
+        local g = grads[i]
+        if g and g.Parent then g.Rotation = ang else table.remove(grads, i) end
+    end
+end)
+
+local function rStr()
+    local c = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    local r = ""
+    for _ = 1, math.random(10, 20) do r = r .. c:sub(math.random(1, #c), math.random(1, #c)) end
+    return r
+end
+
+local function mkLabel(parent, props)
+    local l = Instance.new("TextLabel")
+    l.Name = rStr(); l.BackgroundTransparency = 1; l.Selectable = false
+    for k, v in pairs(props) do l[k] = v end
+    l.Parent = parent
+    return l
+end
+local function mkCorner(parent, radius)
+    local c = Instance.new("UICorner"); c.Name = rStr(); c.CornerRadius = UDim.new(0, radius); c.Parent = parent; return c
+end
+local function mkStroke(parent, thick, color)
+    local s = Instance.new("UIStroke"); s.Name = rStr()
+    s.Color = color or ACCENT; s.Thickness = thick or 2; s.Transparency = 0.3
+    s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; s.Parent = parent
+    local g = Instance.new("UIGradient"); g.Name = rStr(); g.Parent = s
+    g.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0,.2), NumberSequenceKeypoint.new(.5,.7), NumberSequenceKeypoint.new(1,.2)})
+    table.insert(grads, g)
+    return s
+end
+
+local playerGui = lp:WaitForChild("PlayerGui")
+local sg = Instance.new("ScreenGui")
+sg.Name = rStr(); sg.ResetOnSpawn = false; sg.DisplayOrder = 2147483647
+sg.Parent = playerGui
+
+local CW = M and 210 or 260
+local HDR_H = M and 26 or 34
+local ROW_H = M and 24 or 28
+local ROW_GAP = M and 4 or 5
+local TS = ROW_H + ROW_GAP
+local EXEC_H = M and 26 or 30
+local T0 = HDR_H + (M and 5 or 7)
+local EXEC_Y = T0 + TS*2 + (M and 2 or 3)
+local cardH = EXEC_Y + EXEC_H + (M and 7 or 9)
+
+local outer = Instance.new("Frame"); outer.Name = rStr()
+outer.Size = UDim2.new(0, CW, 0, cardH); outer.AnchorPoint = Vector2.new(0.5, 0)
+outer.Position = UDim2.new(0.5, 0, 0, M and 74 or 104)
+outer.BackgroundTransparency = 1; outer.Parent = sg; mkCorner(outer, M and 8 or 12)
+
+local card = Instance.new("Frame"); card.Name = rStr()
+card.Size = UDim2.new(1,0,1,0); card.BackgroundColor3 = BG2
+card.BackgroundTransparency = 0.15; card.BorderSizePixel = 0; card.ClipsDescendants = false; card.Parent = outer
+mkCorner(card, M and 8 or 12)
+do
+    local g = Instance.new("UIGradient"); g.Name = rStr()
+    g.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,BG3), ColorSequenceKeypoint.new(1, Color3.fromRGB(18,18,25))})
+    g.Rotation = 135; g.Parent = card
+    mkStroke(card, M and 1.5 or 2, ACCENT)
+end
+
+local header = Instance.new("Frame"); header.Name = rStr()
+header.Size = UDim2.new(1,0,0,HDR_H); header.BackgroundColor3 = Color3.fromRGB(30,30,40)
+header.BackgroundTransparency = 0.3; header.BorderSizePixel = 0; header.Parent = card
+mkCorner(header, M and 8 or 12); mkStroke(header, M and 1 or 1.5, ACCENT)
+local titleLbl = mkLabel(header, {
+    Position = UDim2.new(0,0,0,0), Size = UDim2.new(1,0,1,0),
+    Text = "Chiraq Hub - Auto Balloon Reset",
+    Font = Enum.Font.GothamBold, TextSize = M and 10 or 12,
+    TextColor3 = Color3.fromRGB(255,255,255),
+    TextXAlignment = Enum.TextXAlignment.Center,
+})
+do
+    local tg = Instance.new("UIGradient"); tg.Name = rStr()
+    tg.Color = ColorSequence.new({ColorSequenceKeypoint.new(0,ACCENT), ColorSequenceKeypoint.new(.5, Color3.fromRGB(255,255,255)), ColorSequenceKeypoint.new(1, ACCENT)})
+    tg.Parent = titleLbl
+    RunService.Heartbeat:Connect(function() tg.Rotation = (tick()*100)%360 end)
+end
+
+local function mkTglRow(parent, labelText, posY)
+    local tf = Instance.new("Frame"); tf.Name = rStr()
+    tf.Size = UDim2.new(1, M and -10 or -16, 0, ROW_H); tf.Position = UDim2.new(0, M and 5 or 8, 0, posY)
+    tf.BackgroundColor3 = ROW; tf.BackgroundTransparency = 0.3; tf.BorderSizePixel = 0; tf.Parent = parent
+    mkCorner(tf, M and 5 or 7)
+    local ts = Instance.new("UIStroke"); ts.Name = rStr(); ts.Color = Color3.fromRGB(60,70,95)
+    ts.Transparency = 0.5; ts.Thickness = M and 1 or 1.5; ts.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; ts.Parent = tf
+
+    local PILL_W = M and 32 or 36
+    local PILL_OFF = M and -7 or -9
+    mkLabel(tf, {
+        Position = UDim2.new(0, M and 6 or 9, 0, 0), Size = UDim2.new(1, M and -50 or -58, 1, 0),
+        Text = labelText, Font = Enum.Font.GothamBold, TextSize = M and 9 or 11,
+        TextColor3 = Color3.fromRGB(230,235,250), TextXAlignment = Enum.TextXAlignment.Left,
+    })
+
+    local btn = Instance.new("TextButton"); btn.Name = rStr(); btn.Parent = tf
+    btn.Size = UDim2.new(0, PILL_W, 0, M and 16 or 19); btn.Position = UDim2.new(1, PILL_OFF, 0.5, 0); btn.AnchorPoint = Vector2.new(1, 0.5)
+    btn.BackgroundColor3 = Color3.fromRGB(45,52,70); btn.Text = ""; btn.BorderSizePixel = 0
+    btn.AutoButtonColor = false; btn.ClipsDescendants = true; btn.Selectable = false; mkCorner(btn, 100)
+
+    local ind = Instance.new("Frame"); ind.Name = rStr(); ind.Parent = btn
+    ind.Size = UDim2.new(0, M and 11 or 13, 0, M and 11 or 13); ind.Position = UDim2.new(0, 3, 0.5, 0); ind.AnchorPoint = Vector2.new(0, 0.5)
+    ind.BackgroundColor3 = Color3.fromRGB(160,170,190); ind.BorderSizePixel = 0; mkCorner(ind, 100)
+
+    return { frame = tf, button = btn, indicator = ind, stroke = ts }
+end
+
+local function tweenTgl(t, on)
+    local tP = on and UDim2.new(1, M and -14 or -16, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+    TweenService:Create(t.indicator, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = tP}):Play()
+    TweenService:Create(t.button, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {BackgroundColor3 = on and Color3.fromRGB(102,126,234) or Color3.fromRGB(45,52,70)}):Play()
+    TweenService:Create(t.indicator, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {BackgroundColor3 = on and Color3.fromRGB(255,255,255) or Color3.fromRGB(160,170,190)}):Play()
+    TweenService:Create(t.stroke, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {Color = on and Color3.fromRGB(102,126,234) or Color3.fromRGB(60,70,95), Transparency = on and 0.3 or 0.5}):Play()
+end
+
+local autoTgl = mkTglRow(card, "AUTO RESET (BALLOON)", T0 + TS*0)
+tweenTgl(autoTgl, cfg.autoOn)
+autoTgl.button.MouseButton1Click:Connect(function()
+    cfg.autoOn = not cfg.autoOn
+    tweenTgl(autoTgl, cfg.autoOn); qSave()
+end)
+
+local keyRow = Instance.new("Frame"); keyRow.Name = rStr()
+keyRow.Size = UDim2.new(1, M and -10 or -16, 0, ROW_H); keyRow.Position = UDim2.new(0, M and 5 or 8, 0, T0 + TS*1)
+keyRow.BackgroundColor3 = ROW; keyRow.BackgroundTransparency = 0.3; keyRow.BorderSizePixel = 0; keyRow.Parent = card
+mkCorner(keyRow, M and 5 or 7)
+do
+    local s = Instance.new("UIStroke"); s.Name = rStr(); s.Color = Color3.fromRGB(60,70,95)
+    s.Transparency = 0.5; s.Thickness = M and 1 or 1.5; s.ApplyStrokeMode = Enum.ApplyStrokeMode.Border; s.Parent = keyRow
+end
+mkLabel(keyRow, {
+    Position = UDim2.new(0, M and 6 or 9, 0, 0), Size = UDim2.new(1, M and -60 or -72, 1, 0),
+    Text = "RESET KEY", Font = Enum.Font.GothamBold, TextSize = M and 9 or 11,
+    TextColor3 = Color3.fromRGB(230,235,250), TextXAlignment = Enum.TextXAlignment.Left,
+})
+local keyBtn = Instance.new("TextButton"); keyBtn.Name = rStr(); keyBtn.Parent = keyRow
+keyBtn.Size = UDim2.new(0, M and 48 or 56, 0, M and 16 or 19)
+keyBtn.Position = UDim2.new(1, M and -7 or -9, 0.5, 0); keyBtn.AnchorPoint = Vector2.new(1, 0.5)
+keyBtn.BackgroundColor3 = Color3.fromRGB(40,46,65); keyBtn.BorderSizePixel = 0
+keyBtn.Font = Enum.Font.GothamBold; keyBtn.TextSize = M and 9 or 11
+keyBtn.TextColor3 = Color3.fromRGB(230,235,250); keyBtn.AutoButtonColor = false; keyBtn.Selectable = false
+keyBtn.Text = cfg.resetKey
+mkCorner(keyBtn, 4)
+mkStroke(keyBtn, 1, Color3.fromRGB(80,90,120))
+
+local listeningForKey = false
+keyBtn.MouseButton1Click:Connect(function()
+    listeningForKey = true
+    keyBtn.Text = "..."
+    keyBtn.BackgroundColor3 = ACCENT
+end)
+
+local eb = Instance.new("TextButton"); eb.Name = rStr(); eb.Parent = card
+eb.Size = UDim2.new(1, M and -10 or -16, 0, EXEC_H); eb.Position = UDim2.new(0, M and 5 or 8, 0, EXEC_Y)
+eb.BackgroundColor3 = ACCENT; eb.Text = "RESET NOW"
+eb.Font = Enum.Font.GothamBold; eb.TextSize = M and 11 or 13
+eb.TextColor3 = Color3.fromRGB(255,255,255); eb.BorderSizePixel = 0
+eb.AutoButtonColor = false; eb.Selectable = false; mkCorner(eb, M and 5 or 7)
+mkStroke(eb, M and 1.5 or 2, Color3.fromRGB(140,155,255))
+do
+    local g = Instance.new("UIGradient"); g.Name = rStr()
+    g.Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromRGB(108,122,255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(68,82,205))})
+    g.Rotation = 135; g.Parent = eb
+end
+if not M then
+    eb.MouseEnter:Connect(function() TweenService:Create(eb, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(112,128,255)}):Play() end)
+    eb.MouseLeave:Connect(function() TweenService:Create(eb, TweenInfo.new(0.12), {BackgroundColor3 = ACCENT}):Play() end)
+end
+
+local resetRemote = nil
+local instaResetCooldown = false
+
+local o
+o = hookfunction(Instance.new("RemoteEvent").FireServer, newcclosure(function(self, ...)
+    if not resetRemote and self.Name:sub(1, 3) == "RE/" then
+        resetRemote = self
+    end
+    return o(self, ...)
+end))
+
+local function instareset()
+    if instaResetCooldown then return end
+    if not resetRemote then return end
+    instaResetCooldown = true
+    local oldChar = lp.Character
+    task.spawn(function()
+        while lp.Character == oldChar do
+            pcall(function() resetRemote:FireServer(GUID, lp, "balloon") end)
+            task.wait()
+        end
+        instaResetCooldown = false
+    end)
+end
+
+eb.MouseButton1Click:Connect(instareset)
+
+for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+    if obj:IsA("RemoteEvent") then
+        obj.OnClientEvent:Connect(function(...)
+            if not cfg.autoOn then return end
+            for _, arg in ipairs({...}) do
+                if type(arg) == "string" and arg:lower():find("jump higher") then
+                    instareset()
+                end
+            end
+        end)
+    end
+end
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+    if listeningForKey then
+        listeningForKey = false
+        cfg.resetKey = input.KeyCode.Name
+        keyBtn.Text = cfg.resetKey
+        keyBtn.BackgroundColor3 = Color3.fromRGB(40,46,65)
+        qSave()
+        return
+    end
+    if gpe then return end
+    if input.KeyCode.Name == cfg.resetKey then
+        instareset()
+    end
+end)
+
+local dragging = false; local dragStart, startPos
+header.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true; dragStart = input.Position; startPos = outer.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local d = input.Position - dragStart
+        outer.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+    end
+end)
+end)
