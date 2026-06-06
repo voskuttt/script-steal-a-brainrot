@@ -1,0 +1,641 @@
+ -- // SERVICIOS
+
+local UIS = game:GetService("UserInputService")
+
+local HttpService = game:GetService("HttpService")
+
+local ProximityPromptService = game:GetService("ProximityPromptService")
+
+local RunService = game:GetService("RunService")
+
+local Players = game:GetService("Players")
+
+local TweenService = game:GetService("TweenService")
+
+local CoreGui = game:GetService("CoreGui")
+
+
+
+local player = Players.LocalPlayer
+
+local ArchivoConfig = "Abyss_MultiConfig.json"
+
+
+
+-- // СОСТОЯНИЯ (DEFAULT)
+
+local config = {
+
+    porcentaje = 50,
+
+    minimo = false,
+
+    posX = 0.5, posOffset = -130,
+
+    posY = 0.4, posYOffset = 0,
+
+    speedValue = 56,
+
+    speedEnabled = false
+
+}
+
+
+
+-- // ЗАГРУЗКА И СОХРАНЕНИЕ
+
+local function GuardarAjustes()
+
+    pcall(function() writefile(ArchivoConfig, HttpService:JSONEncode(config)) end)
+
+end
+
+
+
+if isfile(ArchivoConfig) then
+
+    local s, r = pcall(function() return HttpService:JSONDecode(readfile(ArchivoConfig)) end)
+
+    if s and r then config = r end
+
+end
+
+
+
+-- // ПЕРЕМЕННЫЕ ЛОГИКИ
+
+local sliderValue = config.porcentaje / 100
+
+local flashEnabled = true
+
+local speedEnabled = config.speedEnabled
+
+local speedValue = config.speedValue
+
+local draggingSlider = false
+
+local hubMinimized = config.minimo
+
+
+
+-- // ИНТЕРФЕЙС
+
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+
+ScreenGui.Name = "Abyss_Unified_HUB"
+
+
+
+local Main = Instance.new("Frame", ScreenGui)
+
+Main.Size = hubMinimized and UDim2.new(0, 260, 0, 30) or UDim2.new(0, 260, 0, 190)
+
+Main.Position = UDim2.new(config.posX, config.posOffset, config.posY, config.posYOffset)
+
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+
+Main.BorderSizePixel = 0
+
+Main.Active = true
+
+Main.Draggable = true
+
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+
+local Stroke = Instance.new("UIStroke", Main)
+
+Stroke.Color = Color3.fromRGB(255, 0, 0)
+
+Stroke.Thickness = 1.5
+
+
+
+-- TOP BAR
+
+local Top = Instance.new("Frame", Main)
+
+Top.Size = UDim2.new(1, 0, 0, 30)
+
+Top.BackgroundTransparency = 1
+
+
+
+local Title = Instance.new("TextLabel", Top)
+
+Title.Size = UDim2.new(0, 140, 1, 0)
+
+Title.Position = UDim2.new(0, 10, 0, 0)
+
+Title.Text = "Abyss -- //Voskut"
+
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+Title.Font = Enum.Font.GothamBold
+
+Title.TextSize = 11
+
+Title.BackgroundTransparency = 1
+
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+
+
+local KickBtn = Instance.new("TextButton", Top)
+
+KickBtn.Size = UDim2.new(0, 45, 0, 20)
+
+KickBtn.Position = UDim2.new(1, -80, 0.5, -10)
+
+KickBtn.Text = "Kick"
+
+KickBtn.TextColor3 = Color3.new(1, 1, 1)
+
+KickBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+
+KickBtn.Font = Enum.Font.GothamBold
+
+KickBtn.TextSize = 9
+
+Instance.new("UICorner", KickBtn)
+
+
+
+local MinBtn = Instance.new("TextButton", Top)
+
+MinBtn.Size = UDim2.new(0, 20, 0, 20)
+
+MinBtn.Position = UDim2.new(1, -25, 0.5, -10)
+
+MinBtn.Text = hubMinimized and "+" or "—"
+
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+
+MinBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+MinBtn.Font = Enum.Font.GothamBold
+
+MinBtn.TextSize = 12
+
+Instance.new("UICorner", MinBtn)
+
+
+
+-- ПАНЕЛЬ ВКЛАДОК
+
+local TabBar = Instance.new("Frame", Main)
+
+TabBar.Size = UDim2.new(1, -20, 0, 25)
+
+TabBar.Position = UDim2.new(0, 10, 0, 35)
+
+TabBar.BackgroundTransparency = 1
+
+TabBar.Visible = not hubMinimized
+
+
+
+local FlashTabBtn = Instance.new("TextButton", TabBar)
+
+FlashTabBtn.Size = UDim2.new(0.5, -5, 1, 0)
+
+FlashTabBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 0)
+
+FlashTabBtn.Text = "FLASH"
+
+FlashTabBtn.TextColor3 = Color3.new(1, 1, 1)
+
+FlashTabBtn.Font = Enum.Font.GothamBold
+
+FlashTabBtn.TextSize = 10
+
+Instance.new("UICorner", FlashTabBtn)
+
+
+
+local SpeedTabBtn = Instance.new("TextButton", TabBar)
+
+SpeedTabBtn.Size = UDim2.new(0.5, -5, 1, 0)
+
+SpeedTabBtn.Position = UDim2.new(0.5, 5, 0, 0)
+
+SpeedTabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+SpeedTabBtn.Text = "SPEED"
+
+SpeedTabBtn.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+
+SpeedTabBtn.Font = Enum.Font.GothamBold
+
+SpeedTabBtn.TextSize = 10
+
+Instance.new("UICorner", SpeedTabBtn)
+
+
+
+-- КОНТЕЙНЕР ДЛЯ СОДЕРЖИМОГО
+
+local Content = Instance.new("Frame", Main)
+
+Content.Size = UDim2.new(1, 0, 1, -70)
+
+Content.Position = UDim2.new(0, 0, 0, 70)
+
+Content.BackgroundTransparency = 1
+
+Content.Visible = not hubMinimized
+
+
+
+-- ВКЛАДКА FLASH (UI)
+
+local FlashFrame = Instance.new("Frame", Content)
+
+FlashFrame.Size = UDim2.new(1, 0, 1, 0)
+
+FlashFrame.BackgroundTransparency = 1
+
+
+
+local ToggleFlashBtn = Instance.new("TextButton", FlashFrame)
+
+ToggleFlashBtn.Size = UDim2.new(0.9, 0, 0, 35)
+
+ToggleFlashBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+
+ToggleFlashBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+
+ToggleFlashBtn.Text = "FLASH: ON"
+
+ToggleFlashBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
+
+ToggleFlashBtn.Font = Enum.Font.GothamBold
+
+ToggleFlashBtn.TextSize = 11
+
+Instance.new("UICorner", ToggleFlashBtn)
+
+
+
+local Slider = Instance.new("Frame", FlashFrame)
+
+Slider.Size = UDim2.new(0.7, 0, 0, 6)
+
+Slider.Position = UDim2.new(0.05, 0, 0.7, 0)
+
+Slider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+Instance.new("UICorner", Slider)
+
+
+
+local Fill = Instance.new("Frame", Slider)
+
+Fill.Size = UDim2.new(sliderValue, 0, 1, 0)
+
+Fill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+
+Instance.new("UICorner", Fill)
+
+
+
+local Handle = Instance.new("Frame", Slider)
+
+Handle.Size = UDim2.new(0, 14, 0, 14)
+
+Handle.AnchorPoint = Vector2.new(0.5, 0.5)
+
+Handle.Position = UDim2.new(sliderValue, 0, 0.5, 0)
+
+Handle.BackgroundColor3 = Color3.new(1, 1, 1)
+
+Instance.new("UICorner", Handle)
+
+
+
+local Percent = Instance.new("TextLabel", FlashFrame)
+
+Percent.Size = UDim2.new(0, 40, 0, 20)
+
+Percent.Position = UDim2.new(0.8, 0, 0.62, 0)
+
+Percent.BackgroundTransparency = 1
+
+Percent.Text = math.floor(sliderValue * 100) .. "%"
+
+Percent.TextColor3 = Color3.new(1, 1, 1)
+
+Percent.Font = Enum.Font.GothamBold
+
+Percent.TextSize = 11
+
+
+
+-- ВКЛАДКА SPEED (UI)
+
+local SpeedFrame = Instance.new("Frame", Content)
+
+SpeedFrame.Size = UDim2.new(1, 0, 1, 0)
+
+SpeedFrame.BackgroundTransparency = 1
+
+SpeedFrame.Visible = false
+
+
+
+local ToggleSpeedBtn = Instance.new("TextButton", SpeedFrame)
+
+ToggleSpeedBtn.Size = UDim2.new(0.9, 0, 0, 35)
+
+ToggleSpeedBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+
+ToggleSpeedBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+
+ToggleSpeedBtn.Text = speedEnabled and "SPEED: ON" or "SPEED: OFF"
+
+ToggleSpeedBtn.TextColor3 = speedEnabled and Color3.fromRGB(180, 100, 255) or Color3.fromRGB(150, 150, 150)
+
+ToggleSpeedBtn.Font = Enum.Font.GothamBold
+
+ToggleSpeedBtn.TextSize = 11
+
+Instance.new("UICorner", ToggleSpeedBtn)
+
+
+
+local SpeedLabel = Instance.new("TextLabel", SpeedFrame)
+
+SpeedLabel.Size = UDim2.new(0, 60, 0, 25)
+
+SpeedLabel.Position = UDim2.new(0.05, 0, 0.6, 0)
+
+SpeedLabel.Text = "Value:"
+
+SpeedLabel.TextColor3 = Color3.new(1, 1, 1)
+
+SpeedLabel.BackgroundTransparency = 1
+
+SpeedLabel.Font = Enum.Font.GothamBold
+
+SpeedLabel.TextSize = 12
+
+
+
+local SpeedInput = Instance.new("TextBox", SpeedFrame)
+
+SpeedInput.Size = UDim2.new(0, 100, 0, 30)
+
+SpeedInput.Position = UDim2.new(0.35, 0, 0.6, 0)
+
+SpeedInput.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+SpeedInput.Text = tostring(speedValue)
+
+SpeedInput.TextColor3 = Color3.fromRGB(180, 100, 255)
+
+SpeedInput.Font = Enum.Font.GothamBold
+
+SpeedInput.TextSize = 14
+
+Instance.new("UICorner", SpeedInput)
+
+
+
+-- // ЛОГИКА ВКЛАДОК
+
+local function SwitchTab(to)
+
+    if to == "Flash" then
+
+        FlashFrame.Visible = true
+
+        SpeedFrame.Visible = false
+
+        FlashTabBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 0)
+
+        SpeedTabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+        Stroke.Color = Color3.fromRGB(255, 0, 0)
+
+    else
+
+        FlashFrame.Visible = false
+
+        SpeedFrame.Visible = true
+
+        FlashTabBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+        SpeedTabBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 120)
+
+        Stroke.Color = Color3.fromRGB(180, 100, 255)
+
+    end
+
+end
+
+
+
+FlashTabBtn.MouseButton1Click:Connect(function() SwitchTab("Flash") end)
+
+SpeedTabBtn.MouseButton1Click:Connect(function() SwitchTab("Speed") end)
+
+
+
+-- // ЛОГИКА FLASH (SLIDER)
+
+local function updateSlider(x)
+
+    local size = math.clamp((x - Slider.AbsolutePosition.X) / Slider.AbsoluteSize.X, 0, 1)
+
+    sliderValue = size
+
+    Fill.Size = UDim2.new(size, 0, 1, 0)
+
+    Handle.Position = UDim2.new(size, 0, 0.5, 0)
+
+    Percent.Text = math.floor(size * 100) .. "%"
+
+    config.porcentaje = math.floor(size * 100)
+
+    GuardarAjustes()
+
+end
+
+
+
+Slider.InputBegan:Connect(function(i)
+
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+
+        draggingSlider = true
+
+        Main.Draggable = false
+
+        updateSlider(i.Position.X)
+
+    end
+
+end)
+
+
+
+UIS.InputChanged:Connect(function(i)
+
+    if draggingSlider and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+
+        updateSlider(i.Position.X)
+
+    end
+
+end)
+
+
+
+UIS.InputEnded:Connect(function(i)
+
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+
+        draggingSlider = false
+
+        Main.Draggable = true
+
+    end
+
+end)
+
+
+
+ToggleFlashBtn.MouseButton1Click:Connect(function()
+
+    flashEnabled = not flashEnabled
+
+    ToggleFlashBtn.Text = flashEnabled and "FLASH: ON" or "FLASH: OFF"
+
+    ToggleFlashBtn.TextColor3 = flashEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 50, 50)
+
+end)
+
+
+
+-- // ЛОГИКА SPEED
+
+ToggleSpeedBtn.MouseButton1Click:Connect(function()
+
+    speedEnabled = not speedEnabled
+
+    config.speedEnabled = speedEnabled
+
+    ToggleSpeedBtn.Text = speedEnabled and "SPEED: ON" or "SPEED: OFF"
+
+    ToggleSpeedBtn.TextColor3 = speedEnabled and Color3.fromRGB(180, 100, 255) or Color3.fromRGB(150, 150, 150)
+
+    GuardarAjustes()
+
+end)
+
+
+
+SpeedInput.FocusLost:Connect(function()
+
+    speedValue = tonumber(SpeedInput.Text) or speedValue
+
+    config.speedValue = speedValue
+
+    SpeedInput.Text = tostring(speedValue)
+
+    GuardarAjustes()
+
+end)
+
+
+
+-- // ОБЩИЕ КНОПКИ
+
+MinBtn.MouseButton1Click:Connect(function()
+
+    hubMinimized = not hubMinimized
+
+    Content.Visible = not hubMinimized
+
+    TabBar.Visible = not hubMinimized
+
+    MinBtn.Text = hubMinimized and "+" or "—"
+
+    Main:TweenSize(hubMinimized and UDim2.new(0, 260, 0, 30) or UDim2.new(0, 260, 0, 190), "Out", "Quad", 0.2, true)
+
+    config.minimo = hubMinimized
+
+    GuardarAjustes()
+
+end)
+
+
+
+KickBtn.MouseButton1Click:Connect(function() player:Kick("self Kick by abyss hub") end)
+
+
+
+Main:GetPropertyChangedSignal("Position"):Connect(function()
+
+    config.posX = Main.Position.X.Scale
+
+    config.posOffset = Main.Position.X.Offset
+
+    config.posY = Main.Position.Y.Scale
+
+    config.posYOffset = Main.Position.Y.Offset
+
+    GuardarAjustes()
+
+end)
+
+
+
+-- // РАБОЧИЕ ЦИКЛЫ
+
+ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt)
+
+    if not flashEnabled then return end
+
+    local start = os.clock()
+
+    local conn
+
+    conn = RunService.RenderStepped:Connect(function()
+
+        if not prompt or not prompt.Parent then conn:Disconnect() return end
+
+        if (os.clock() - start) / prompt.HoldDuration >= sliderValue then
+
+            conn:Disconnect()
+
+            local tool = player.Character:FindFirstChildOfClass("Tool")
+
+            if tool then tool:Activate() end
+
+        end
+
+    end)
+
+    prompt.PromptButtonHoldEnded:Connect(function() if conn then conn:Disconnect() end end)
+
+end)
+
+
+
+RunService.Heartbeat:Connect(function()
+
+    local char = player.Character
+
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+
+   
+
+    if hum and root and speedEnabled and hum.MoveDirection.Magnitude > 0 then
+
+        root.Velocity = Vector3.new(hum.MoveDirection.X * speedValue, root.Velocity.Y, hum.MoveDirection.Z * speedValue)
+
+    end
+
+end) 
